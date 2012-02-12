@@ -5,24 +5,21 @@ import java.io.ByteArrayOutputStream;
 import java.security.KeyPair;
 import java.security.PublicKey;
 import java.security.Security;
-import junit.framework.Test;
-import junit.framework.TestCase;
-import junit.framework.TestSuite;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
+import static org.junit.Assert.*;
+import org.junit.Before;
+import org.junit.Test;
 
-public class CryptographyTest extends TestCase {
-
-  public static Test suite() {
-    return new TestSuite(CryptographyTest.class);
-  }
-
-  public CryptographyTest(String testName) {
-    super(testName);
-  }
-
-  public void testKeyPairExportImport() throws Exception {
+public class CryptographyTest {
+  
+  @Before
+  public void setupBouncyCastle() {
+    // Registers Bouncy Castle as a provider for JCE.
     Security.addProvider(new BouncyCastleProvider());
+  }
 
+  @Test
+  public void testKeyPairExportImport() throws Exception {
     // Creates a new user.
     UserFactory userFactory = new UserFactory(1024);
     User alice = userFactory.createUser("Alice");
@@ -41,16 +38,17 @@ public class CryptographyTest extends TestCase {
             "my pass phrase".toCharArray(),
             true);
     
-    // The private keys should be equal.
-    assertTrue(originalAliceKeyPair.getPrivate().equals(importedAliceKeyPair.getPrivate()));
+    assertEquals("The private keys should be equal.",
+            originalAliceKeyPair.getPrivate(),
+            importedAliceKeyPair.getPrivate());
     
-    // The public keys should be equal.
-    assertTrue(originalAliceKeyPair.getPublic().equals(importedAliceKeyPair.getPublic()));
+    assertEquals("The public keys should be equal.",
+            originalAliceKeyPair.getPublic(),
+            importedAliceKeyPair.getPublic());
   }
   
+  @Test
   public void testPublicKeyExportImport() throws Exception {
-    Security.addProvider(new BouncyCastleProvider());
-
     // Creates a new user.
     UserFactory userFactory = new UserFactory(1024);
     User alice = userFactory.createUser("Alice");
@@ -65,8 +63,9 @@ public class CryptographyTest extends TestCase {
             new ByteArrayInputStream(publicKeyOutputStream.toByteArray()),
             true);
     
-    // The public keys should be equal.
-    assertTrue(originalAlicePublicKey.equals(importedAlicePublicKey));
+    assertEquals("The public keys should be equal.",
+            originalAlicePublicKey,
+            importedAlicePublicKey);
     
     // Prints the keys.
     //KeyExporter.exportPublicKey(originalAlicePublicKey, System.out, true);
