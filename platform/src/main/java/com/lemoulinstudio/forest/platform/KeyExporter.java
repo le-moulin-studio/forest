@@ -3,6 +3,7 @@ package com.lemoulinstudio.forest.platform;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.security.InvalidKeyException;
+import java.security.KeyPair;
 import java.security.NoSuchProviderException;
 import java.security.PublicKey;
 import java.security.SecureRandom;
@@ -18,7 +19,7 @@ import org.bouncycastle.openpgp.PGPSignature;
 public class KeyExporter {
 
   public static void exportKeyPair(
-          User user,
+          KeyPair keyPair,
           char[] passPhrase,
           String identity,
           OutputStream secretOut,
@@ -33,8 +34,8 @@ public class KeyExporter {
     PGPSecretKey secretKey = new PGPSecretKey(
             PGPSignature.DEFAULT_CERTIFICATION,
             PGPPublicKey.RSA_GENERAL,
-            user.getPublicKey(),
-            user.getPrivateKey(),
+            keyPair.getPublic(),
+            keyPair.getPrivate(),
             new Date(),
             identity,
             PGPEncryptedData.AES_256,
@@ -56,7 +57,7 @@ public class KeyExporter {
   
   public static void exportPublicKey(
           PublicKey publicKey,
-          OutputStream publicOut,
+          OutputStream outputStream,
           boolean armor)
           throws NoSuchProviderException, PGPException, IOException {
     PGPPublicKey pgpPublicKey = new PGPPublicKey(
@@ -66,13 +67,13 @@ public class KeyExporter {
             "BC");
     
     if (armor) {
-      publicOut = new ArmoredOutputStream(publicOut);
+      outputStream = new ArmoredOutputStream(outputStream);
     }
     
-    pgpPublicKey.encode(publicOut);
+    pgpPublicKey.encode(outputStream);
     
     if (armor) {
-      publicOut.close();
+      outputStream.close();
     }
   }
 }

@@ -1,26 +1,19 @@
 package com.lemoulinstudio.forest.platform;
 
-import java.security.PrivateKey;
-import java.security.PublicKey;
+import java.security.KeyPair;
 
 public class User {
   
-  private PublicKey publicKey;
-  private PrivateKey privateKey;
+  private KeyPair keyPair;
   private String name;
 
-  public User(PublicKey publicKey, PrivateKey privateKey, String name) {
-    this.publicKey = publicKey;
-    this.privateKey = privateKey;
+  public User(KeyPair keyPair, String name) {
+    this.keyPair = keyPair;
     this.name = name;
   }
 
-  public PublicKey getPublicKey() {
-    return publicKey;
-  }
-  
-  public PrivateKey getPrivateKey() {
-    return privateKey;
+  public KeyPair getKeyPair() {
+    return keyPair;
   }
 
   public String getName() {

@@ -1,21 +1,59 @@
 package com.lemoulinstudio.forest.platform;
 
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.security.InvalidKeyException;
 import java.security.KeyPair;
 import java.security.KeyPairGenerator;
 import java.security.NoSuchAlgorithmException;
 import java.security.NoSuchProviderException;
+import java.security.SignatureException;
+import org.bouncycastle.openpgp.PGPException;
 
 public class UserFactory {
   
-  //public static final int keySize = 4096;
-  public static final int keySize = 1024;
-  
-  public static User createUser(String name) throws NoSuchProviderException, NoSuchAlgorithmException {
+  public final int keySize;
+
+  public UserFactory() {
+    this(4096);
+  }
+
+  public UserFactory(int keySize) {
+    this.keySize = keySize;
+  }
+
+  public User createUser(String name)
+          throws NoSuchProviderException,
+                 NoSuchAlgorithmException,
+                 InvalidKeyException,
+                 SignatureException,
+                 PGPException,
+                 IOException {
     KeyPairGenerator keyPairGenerator = KeyPairGenerator.getInstance("RSA", "BC");
     keyPairGenerator.initialize(keySize);
     KeyPair keyPair = keyPairGenerator.generateKeyPair();
-    User user = new User(keyPair.getPublic(), keyPair.getPrivate(), name);
-    return user;
+    
+    // Exports the key pair.
+    ByteArrayOutputStream secretKeyOutputStream = new ByteArrayOutputStream();
+    ByteArrayOutputStream publicKeyOutputStream = new ByteArrayOutputStream();
+    KeyExporter.exportKeyPair(keyPair,
+            "".toCharArray(), "",
+            secretKeyOutputStream, publicKeyOutputStream, false);
+    
+    // Import the key pair, so that P < Q in the private key.
+    KeyPair importedKeyPair = KeyImporter.importKeyPair(
+            new ByteArrayInputStream(secretKeyOutputStream.toByteArray()),
+            "".toCharArray(), false);
+    
+    return new User(importedKeyPair, name);
   }
   
+  public User createUser(String name, InputStream inputStream, char[] passPhrase, boolean armor)
+          throws IOException, NoSuchProviderException, PGPException {
+    KeyPair keyPair = KeyImporter.importKeyPair(inputStream, passPhrase, armor);
+    return new User(keyPair, name);
+  }
+
 }
