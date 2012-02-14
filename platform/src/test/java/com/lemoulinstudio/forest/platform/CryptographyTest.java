@@ -88,7 +88,10 @@ public class CryptographyTest {
     //KeyExporter.exportPublicKey(importedAlicePublicKey, System.out, true);
   }
   
-  private void testCipherEncryptionDecryption(BlockCipher cipherEngine, int keySizeInBits) throws Exception {
+  private void testBlockCipher(
+          BlockCipher encryptEngine,
+          BlockCipher decryptEngine,
+          int keySizeInBits) throws Exception {
     // Let's define a data.
     byte[] dataToEncrypt = famousQuote.getBytes();
     
@@ -97,7 +100,7 @@ public class CryptographyTest {
     new SecureRandom().nextBytes(secretKey);
     
     // Prepare the objects to encrypt the data.
-    PaddedBufferedBlockCipher encryptCipher = new PaddedBufferedBlockCipher(cipherEngine);
+    PaddedBufferedBlockCipher encryptCipher = new PaddedBufferedBlockCipher(encryptEngine);
     encryptCipher.init(true, new KeyParameter(secretKey));
     byte[] encryptedData = new byte[dataToEncrypt.length + encryptCipher.getBlockSize() * 2];
     
@@ -106,7 +109,7 @@ public class CryptographyTest {
     nbEncryptedBytes += encryptCipher.doFinal(encryptedData, nbEncryptedBytes);
     
     // Prepare the objects to decrypt the data.
-    PaddedBufferedBlockCipher decryptCipher = new PaddedBufferedBlockCipher(cipherEngine);
+    PaddedBufferedBlockCipher decryptCipher = new PaddedBufferedBlockCipher(decryptEngine);
     decryptCipher.init(false, new KeyParameter(secretKey));
     byte[] decryptedData = new byte[dataToEncrypt.length];
     
@@ -114,8 +117,8 @@ public class CryptographyTest {
     int nbDecryptedBytes = decryptCipher.processBytes(encryptedData, 0, nbEncryptedBytes, decryptedData, 0);
     nbDecryptedBytes += decryptCipher.doFinal(decryptedData, nbDecryptedBytes);
     
-    assertFalse("The data should not be the same after encryption.",
-            Arrays.equals(dataToEncrypt, Arrays.copyOfRange(encryptedData, 0, dataToEncrypt.length)));
+    assertTrue("The data should not be the same after encryption.",
+            !Arrays.equals(dataToEncrypt, Arrays.copyOfRange(encryptedData, 0, dataToEncrypt.length)));
     
     assertEquals("The decrypted data should have the same size that the original one.",
             dataToEncrypt.length,
@@ -131,12 +134,24 @@ public class CryptographyTest {
   }
   
   @Test
-  public void testCiphersEncryptionDecryption() throws Exception {
-    testCipherEncryptionDecryption(new AESEngine(),      256); // keysizes in bits: 128, 192, 256.
-    testCipherEncryptionDecryption(new AESFastEngine(),  256);
-    testCipherEncryptionDecryption(new AESLightEngine(), 256);
-    testCipherEncryptionDecryption(new CAST5Engine(),    128); // keysizes in bits: 40, 64, 80, 128.
-    testCipherEncryptionDecryption(new CAST6Engine(),    256); // keysizes in bits: 128, 160, 192, 224, 256.
+  public void testBlockCiphers() throws Exception {
+    testBlockCipher(new AESEngine(),      new AESEngine(),      256); // keysizes in bits: 128, 192, 256.
+    testBlockCipher(new AESFastEngine(),  new AESFastEngine(),  256);
+    testBlockCipher(new AESLightEngine(), new AESLightEngine(), 256);
+    testBlockCipher(new CAST5Engine(),    new CAST5Engine(),    128); // keysizes in bits: 40, 64, 80, 128.
+    testBlockCipher(new CAST6Engine(),    new CAST6Engine(),    256); // keysizes in bits: 128, 160, 192, 224, 256.
+  }
+  
+  @Test
+  public void testAsymmetricBlockCiphers() throws Exception {
+  }
+  
+  @Test
+  public void testSignedData() throws Exception {
+  }
+  
+  @Test
+  public void testDiffieHellman() throws Exception {
   }
   
 }
