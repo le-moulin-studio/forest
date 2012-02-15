@@ -13,10 +13,16 @@ import org.bouncycastle.crypto.engines.AESFastEngine;
 import org.bouncycastle.crypto.engines.AESLightEngine;
 import org.bouncycastle.crypto.engines.CAST5Engine;
 import org.bouncycastle.crypto.engines.CAST6Engine;
+import org.bouncycastle.crypto.engines.RSAEngine;
 import org.bouncycastle.crypto.paddings.PaddedBufferedBlockCipher;
 import org.bouncycastle.crypto.params.KeyParameter;
+import org.bouncycastle.crypto.params.RSAKeyParameters;
+import org.bouncycastle.crypto.params.RSAPrivateCrtKeyParameters;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
+import org.bouncycastle.jce.provider.JCERSAPrivateCrtKey;
+import org.bouncycastle.jce.provider.JCERSAPublicKey;
 import static org.junit.Assert.*;
+import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
@@ -28,16 +34,25 @@ public class CryptographyTest {
           + "deserve neither Liberty nor Safety. "
           + "-- Benjamin Franklin";
   
+  public final int userKeysize = 1024;
+  
+  private UserFactory userFactory;
+  
   @BeforeClass
   public static void setupBouncyCastle() {
     // Registers Bouncy Castle as a provider for JCE.
     Security.addProvider(new BouncyCastleProvider());
   }
+  
+  @Before
+  public void perTestSetup() {
+    // Setup a user factory. Users are assigned a RSA keypair.
+    userFactory = new UserFactory(userKeysize);
+  }
 
   @Test
   public void testKeyPairExportImport() throws Exception {
     // Creates a new user.
-    UserFactory userFactory = new UserFactory(1024);
     User alice = userFactory.createUser("Alice");
     KeyPair originalAliceKeyPair = alice.getKeyPair();
     
@@ -66,7 +81,6 @@ public class CryptographyTest {
   @Test
   public void testPublicKeyExportImport() throws Exception {
     // Creates a new user.
-    UserFactory userFactory = new UserFactory(1024);
     User alice = userFactory.createUser("Alice");
     PublicKey originalAlicePublicKey = alice.getKeyPair().getPublic();
     
@@ -129,8 +143,8 @@ public class CryptographyTest {
             decryptedData);
     
     // Prints the data and its encrypted form.
-    //System.out.println("dataToEncrypt = " + Arrays.toString(dataToEncrypt));
-    //System.out.println("encryptedData = " + Arrays.toString(encryptedData));
+    //System.out.println("dataToEncrypt (" + dataToEncrypt.length + ") = " + Arrays.toString(dataToEncrypt));
+    //System.out.println("encryptedData (" + encryptedData.length + ") = " + Arrays.toString(encryptedData));
   }
   
   @Test
@@ -143,7 +157,53 @@ public class CryptographyTest {
   }
   
   @Test
-  public void testAsymmetricBlockCiphers() throws Exception {
+  public void testRSACipher() throws Exception {
+    // Creates a new user.
+    User alice = userFactory.createUser("Alice");
+    
+    // Get its RSA key pair.
+    JCERSAPublicKey publicKey = (JCERSAPublicKey) alice.getKeyPair().getPublic();
+    JCERSAPrivateCrtKey privateKey = (JCERSAPrivateCrtKey) alice.getKeyPair().getPrivate();
+    
+    // Setup the encryption cipher.
+    RSAEngine encryptionCipher = new RSAEngine();
+    RSAKeyParameters publicKeyParameters = new RSAKeyParameters(false, publicKey.getModulus(), publicKey.getPublicExponent());
+    encryptionCipher.init(true, publicKeyParameters);
+    
+    // Setup the decryption cipher.
+    RSAEngine decryptionCipher = new RSAEngine();
+    RSAPrivateCrtKeyParameters privateKeyParameters = new RSAPrivateCrtKeyParameters(
+            privateKey.getModulus(),
+            privateKey.getPublicExponent(),
+            privateKey.getPrivateExponent(),
+            privateKey.getPrimeP(),
+            privateKey.getPrimeQ(),
+            privateKey.getPrimeExponentP(),
+            privateKey.getPrimeExponentQ(),
+            privateKey.getCrtCoefficient());
+    decryptionCipher.init(false, privateKeyParameters);
+    
+    // Let's define a data.
+    byte[] dataToEncrypt = new byte[encryptionCipher.getInputBlockSize()];
+    new SecureRandom().nextBytes(dataToEncrypt);
+    
+    // Encrypt the data.
+    byte[] encryptedData = encryptionCipher.processBlock(dataToEncrypt, 0, dataToEncrypt.length);
+    
+    // Decrypt the data.
+    byte[] decryptedData = decryptionCipher.processBlock(encryptedData, 0, encryptedData.length);
+    
+    assertTrue("The data should not be the same after encryption.",
+            !Arrays.equals(dataToEncrypt, encryptedData));
+    
+    assertArrayEquals("The data should be the same before encryption and after decryption.",
+            dataToEncrypt,
+            decryptedData);
+    
+    // Prints the data and its encrypted form.
+    //System.out.println("dataToEncrypt (" + dataToEncrypt.length + ") = " + Arrays.toString(dataToEncrypt));
+    //System.out.println("encryptedData (" + encryptedData.length + ") = " + Arrays.toString(encryptedData));
+    //System.out.println("decryptedData (" + decryptedData.length + ") = " + Arrays.toString(decryptedData));
   }
   
   @Test
