@@ -2,19 +2,25 @@ package com.lemoulinstudio.forest.platform;
 
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
+import java.math.BigInteger;
 import java.security.KeyPair;
 import java.security.PublicKey;
 import java.security.SecureRandom;
 import java.security.Security;
 import java.util.Arrays;
+import org.bouncycastle.crypto.AsymmetricCipherKeyPair;
 import org.bouncycastle.crypto.BlockCipher;
+import org.bouncycastle.crypto.agreement.DHBasicAgreement;
 import org.bouncycastle.crypto.engines.AESEngine;
 import org.bouncycastle.crypto.engines.AESFastEngine;
 import org.bouncycastle.crypto.engines.AESLightEngine;
 import org.bouncycastle.crypto.engines.CAST5Engine;
 import org.bouncycastle.crypto.engines.CAST6Engine;
 import org.bouncycastle.crypto.engines.RSAEngine;
+import org.bouncycastle.crypto.generators.DHKeyPairGenerator;
 import org.bouncycastle.crypto.paddings.PaddedBufferedBlockCipher;
+import org.bouncycastle.crypto.params.DHKeyGenerationParameters;
+import org.bouncycastle.crypto.params.DHParameters;
 import org.bouncycastle.crypto.params.KeyParameter;
 import org.bouncycastle.crypto.params.RSAKeyParameters;
 import org.bouncycastle.crypto.params.RSAPrivateCrtKeyParameters;
@@ -212,6 +218,48 @@ public class CryptographyTest {
   
   @Test
   public void testDiffieHellman() throws Exception {
+    SecureRandom secureRandom = new SecureRandom();
+    
+    // Setup the public predefined parameters for our Diffie Hellman key exchange.
+    //BigInteger diffieHellmanModulus = BigInteger.probablePrime(4096, secureRandom);
+    //BigInteger diffieHellmanBase = BigInteger.probablePrime(1024, secureRandom);
+    BigInteger diffieHellmanModulus = BigInteger.probablePrime(1024, secureRandom);
+    BigInteger diffieHellmanBase = BigInteger.probablePrime(256, secureRandom);
+    DHKeyGenerationParameters diffieHellmanKeyGenerationParameters =
+            new DHKeyGenerationParameters(secureRandom,
+                    new DHParameters(diffieHellmanModulus, diffieHellmanBase));
+    
+    // Setup a key pair generator.
+    DHKeyPairGenerator diffieHellmanKeyPairGen = new DHKeyPairGenerator();
+    diffieHellmanKeyPairGen.init(diffieHellmanKeyGenerationParameters);
+    
+    // Create a key pair for Alice.
+    AsymmetricCipherKeyPair aliceKeyPair = diffieHellmanKeyPairGen.generateKeyPair();
+    
+    // Create a key pair for Bob.
+    AsymmetricCipherKeyPair bobKeyPair = diffieHellmanKeyPairGen.generateKeyPair();
+    
+    // Make sure that the generator is providing 2 different keys.
+    assertTrue(!aliceKeyPair.getPrivate().equals(bobKeyPair.getPrivate()));
+    assertTrue(!aliceKeyPair.getPublic().equals(bobKeyPair.getPublic()));
+    
+    // Compute the shared secret on alice's side.
+    DHBasicAgreement aliceKeyAgreement = new DHBasicAgreement();
+    aliceKeyAgreement.init(aliceKeyPair.getPrivate());
+    BigInteger aliceSideSecret = aliceKeyAgreement.calculateAgreement(bobKeyPair.getPublic());
+    
+    // Compute the shared secret on bob's side.
+    DHBasicAgreement bobKeyAgreement = new DHBasicAgreement();
+    bobKeyAgreement.init(bobKeyPair.getPrivate());
+    BigInteger bobSideSecret = bobKeyAgreement.calculateAgreement(aliceKeyPair.getPublic());
+    
+    assertEquals(aliceSideSecret, bobSideSecret);
+    
+    // Prints the data and its encrypted form.
+    //System.out.println("diffieHellmanModulus = " + diffieHellmanModulus);
+    //System.out.println("diffieHellmanBase    = " + diffieHellmanBase);
+    //System.out.println("aliceSideSecret      = " + aliceSideSecret);
+    //System.out.println("bobSideSecret        = " + bobSideSecret);
   }
   
 }
