@@ -1,5 +1,6 @@
 package com.lemoulinstudio.forest.platform;
 
+import com.lemoulinstudio.forest.platform.crypto.CryptoUtil;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.math.BigInteger;
@@ -66,12 +67,12 @@ public class CryptographyTest {
     // Exports its key pair.
     ByteArrayOutputStream secretKeyOutputStream = new ByteArrayOutputStream();
     ByteArrayOutputStream publicKeyOutputStream = new ByteArrayOutputStream();
-    KeyExporter.exportKeyPair(originalAliceKeyPair,
+    CryptoUtil.exportKeyPair(originalAliceKeyPair,
             "my pass phrase".toCharArray(), "Alice In Wonderland",
             secretKeyOutputStream, publicKeyOutputStream, true);
     
     // Imports the key pair from the exported data.
-    KeyPair importedAliceKeyPair = KeyImporter.importKeyPair(
+    KeyPair importedAliceKeyPair = CryptoUtil.importKeyPair(
             new ByteArrayInputStream(secretKeyOutputStream.toByteArray()),
             "my pass phrase".toCharArray(),
             true);
@@ -93,10 +94,10 @@ public class CryptographyTest {
     
     // Exports its public key.
     ByteArrayOutputStream publicKeyOutputStream = new ByteArrayOutputStream();
-    KeyExporter.exportPublicKey(originalAlicePublicKey, publicKeyOutputStream, true);
+    CryptoUtil.exportPublicKey(originalAlicePublicKey, publicKeyOutputStream, true);
     
     // Imports the public key from the exported data.
-    PublicKey importedAlicePublicKey = KeyImporter.importPublicKey(
+    PublicKey importedAlicePublicKey = CryptoUtil.importPublicKey(
             new ByteArrayInputStream(publicKeyOutputStream.toByteArray()),
             true);
     

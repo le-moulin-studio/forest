@@ -1,5 +1,6 @@
 package com.lemoulinstudio.forest.platform;
 
+import com.lemoulinstudio.forest.platform.crypto.CryptoUtil;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
@@ -38,12 +39,12 @@ public class UserFactory {
     // Exports the key pair.
     ByteArrayOutputStream secretKeyOutputStream = new ByteArrayOutputStream();
     ByteArrayOutputStream publicKeyOutputStream = new ByteArrayOutputStream();
-    KeyExporter.exportKeyPair(keyPair,
+    CryptoUtil.exportKeyPair(keyPair,
             "".toCharArray(), "",
             secretKeyOutputStream, publicKeyOutputStream, false);
     
     // Import the key pair, so that P < Q in the private key.
-    KeyPair importedKeyPair = KeyImporter.importKeyPair(
+    KeyPair importedKeyPair = CryptoUtil.importKeyPair(
             new ByteArrayInputStream(secretKeyOutputStream.toByteArray()),
             "".toCharArray(), false);
     
@@ -52,7 +53,7 @@ public class UserFactory {
   
   public User createUser(String name, InputStream inputStream, char[] passPhrase, boolean armor)
           throws IOException, NoSuchProviderException, PGPException {
-    KeyPair keyPair = KeyImporter.importKeyPair(inputStream, passPhrase, armor);
+    KeyPair keyPair = CryptoUtil.importKeyPair(inputStream, passPhrase, armor);
     return new User(keyPair, name);
   }
 
