@@ -4,6 +4,7 @@ import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.math.BigInteger;
 import java.security.KeyPair;
+import java.security.MessageDigest;
 import java.security.PublicKey;
 import java.security.SecureRandom;
 import java.security.Security;
@@ -176,6 +177,13 @@ public class CryptographyTest {
     RSAKeyParameters publicKeyParameters = new RSAKeyParameters(false, publicKey.getModulus(), publicKey.getPublicExponent());
     encryptionCipher.init(true, publicKeyParameters);
     
+    // Let's define a data.
+    byte[] dataToEncrypt = new byte[encryptionCipher.getInputBlockSize()];
+    new SecureRandom().nextBytes(dataToEncrypt);
+    
+    // Encrypt the data.
+    byte[] encryptedData = encryptionCipher.processBlock(dataToEncrypt, 0, dataToEncrypt.length);
+    
     // Setup the decryption cipher.
     RSAEngine decryptionCipher = new RSAEngine();
     RSAPrivateCrtKeyParameters privateKeyParameters = new RSAPrivateCrtKeyParameters(
@@ -188,13 +196,6 @@ public class CryptographyTest {
             privateKey.getPrimeExponentQ(),
             privateKey.getCrtCoefficient());
     decryptionCipher.init(false, privateKeyParameters);
-    
-    // Let's define a data.
-    byte[] dataToEncrypt = new byte[encryptionCipher.getInputBlockSize()];
-    new SecureRandom().nextBytes(dataToEncrypt);
-    
-    // Encrypt the data.
-    byte[] encryptedData = encryptionCipher.processBlock(dataToEncrypt, 0, dataToEncrypt.length);
     
     // Decrypt the data.
     byte[] decryptedData = decryptionCipher.processBlock(encryptedData, 0, encryptedData.length);
@@ -213,7 +214,56 @@ public class CryptographyTest {
   }
   
   @Test
-  public void testSignedData() throws Exception {
+  public void testRSASignedData() throws Exception {
+    // Creates a new user.
+    User alice = userFactory.createUser("Alice");
+    
+    // Get its RSA key pair.
+    JCERSAPublicKey publicKey = (JCERSAPublicKey) alice.getKeyPair().getPublic();
+    JCERSAPrivateCrtKey privateKey = (JCERSAPrivateCrtKey) alice.getKeyPair().getPrivate();
+    
+    // Creates a hash of the data.
+    MessageDigest messageDigest = MessageDigest.getInstance("SHA-256");
+    messageDigest.update(famousQuote.getBytes("UTF-8"));
+    byte[] dataHash = messageDigest.digest();
+    
+    // Creates the signature with Alice's private key.
+    RSAEngine decryptionCipher = new RSAEngine();
+    RSAPrivateCrtKeyParameters privateKeyParameters = new RSAPrivateCrtKeyParameters(
+            privateKey.getModulus(),
+            privateKey.getPublicExponent(),
+            privateKey.getPrivateExponent(),
+            privateKey.getPrimeP(),
+            privateKey.getPrimeQ(),
+            privateKey.getPrimeExponentP(),
+            privateKey.getPrimeExponentQ(),
+            privateKey.getCrtCoefficient());
+    decryptionCipher.init(false, privateKeyParameters);
+    
+    // Sign the hash.
+    byte[] signature = decryptionCipher.processBlock(dataHash, 0, dataHash.length);
+    
+    assertTrue("The hash and the data should not be the same.",
+            !Arrays.equals(dataHash, signature));
+    
+    // Encrypt the signature of the data with Alice's public key.
+    RSAEngine encryptionCipher = new RSAEngine();
+    RSAKeyParameters publicKeyParameters = new RSAKeyParameters(false, publicKey.getModulus(), publicKey.getPublicExponent());
+    encryptionCipher.init(true, publicKeyParameters);
+    
+    // Verify the signature.
+    byte[] encryptedSignature = encryptionCipher.processBlock(signature, 0, signature.length);
+    byte[] trimmedEncryptedSignature = Arrays.copyOfRange(
+            encryptedSignature,
+            encryptedSignature.length - dataHash.length,
+            encryptedSignature.length);
+    
+    //System.out.println("dataHash (" + dataHash.length + ") = " + Arrays.toString(dataHash));
+    //System.out.println("signature (" + signature.length + ") = " + Arrays.toString(signature));
+    //System.out.println("encryptedSignature (" + encryptedSignature.length + ") = " + Arrays.toString(encryptedSignature));
+    //System.out.println("trimmedEncryptedSignature (" + trimmedEncryptedSignature.length + ") = " + Arrays.toString(trimmedEncryptedSignature));
+    
+    assertArrayEquals("The signature's verification failed.", dataHash, trimmedEncryptedSignature);
   }
   
   @Test
@@ -240,8 +290,10 @@ public class CryptographyTest {
     AsymmetricCipherKeyPair bobKeyPair = diffieHellmanKeyPairGen.generateKeyPair();
     
     // Make sure that the generator is providing 2 different keys.
-    assertTrue(!aliceKeyPair.getPrivate().equals(bobKeyPair.getPrivate()));
-    assertTrue(!aliceKeyPair.getPublic().equals(bobKeyPair.getPublic()));
+    assertTrue("The key generator should provide 2 different private keys.",
+            !aliceKeyPair.getPrivate().equals(bobKeyPair.getPrivate()));
+    assertTrue("The key generator should provide 2 different public keys.",
+            !aliceKeyPair.getPublic().equals(bobKeyPair.getPublic()));
     
     // Compute the shared secret on alice's side.
     DHBasicAgreement aliceKeyAgreement = new DHBasicAgreement();
@@ -253,7 +305,7 @@ public class CryptographyTest {
     bobKeyAgreement.init(bobKeyPair.getPrivate());
     BigInteger bobSideSecret = bobKeyAgreement.calculateAgreement(aliceKeyPair.getPublic());
     
-    assertEquals(aliceSideSecret, bobSideSecret);
+    assertEquals("Shared secret should be the same on both sides.", aliceSideSecret, bobSideSecret);
     
     // Prints the data and its encrypted form.
     //System.out.println("diffieHellmanModulus = " + diffieHellmanModulus);
