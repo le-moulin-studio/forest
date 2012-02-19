@@ -1,6 +1,7 @@
-package com.lemoulinstudio.forest.platform;
+package com.lemoulinstudio.forest.platform.crypto;
 
-import com.lemoulinstudio.forest.platform.crypto.CryptoUtil;
+import com.lemoulinstudio.forest.platform.User;
+import com.lemoulinstudio.forest.platform.UserFactory;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.math.BigInteger;
@@ -34,7 +35,7 @@ import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
-public class CryptographyTest {
+public class CryptoUtilTest {
   
   public static final String famousQuote  =
           "Those who would give up Essential Liberty to purchase "
