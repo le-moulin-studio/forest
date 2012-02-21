@@ -87,8 +87,8 @@ public class BouncyCastleTest {
             decryptedData);
     
     // Prints the data and its encrypted form.
-    //System.out.println("dataToEncrypt (" + dataToEncrypt.length + ") = " + Arrays.toString(dataToEncrypt));
-    //System.out.println("encryptedData (" + encryptedData.length + ") = " + Arrays.toString(encryptedData));
+    //System.out.println("dataToEncrypt (" + dataToEncrypt.length * 8 + " bits) = " + Arrays.toString(dataToEncrypt));
+    //System.out.println("encryptedData (" + encryptedData.length * 8 + " bits) = " + Arrays.toString(encryptedData));
   }
   
   @Test
@@ -145,9 +145,9 @@ public class BouncyCastleTest {
             decryptedData);
     
     // Prints the data and its encrypted form.
-    //System.out.println("dataToEncrypt (" + dataToEncrypt.length + ") = " + Arrays.toString(dataToEncrypt));
-    //System.out.println("encryptedData (" + encryptedData.length + ") = " + Arrays.toString(encryptedData));
-    //System.out.println("decryptedData (" + decryptedData.length + ") = " + Arrays.toString(decryptedData));
+    //System.out.println("dataToEncrypt (" + dataToEncrypt.length * 8 + " bits) = " + Arrays.toString(dataToEncrypt));
+    //System.out.println("encryptedData (" + encryptedData.length * 8 + " bits) = " + Arrays.toString(encryptedData));
+    //System.out.println("decryptedData (" + decryptedData.length * 8 + " bits) = " + Arrays.toString(decryptedData));
   }
   
   @Test
@@ -198,10 +198,10 @@ public class BouncyCastleTest {
             encryptedSignature.length - dataHash.length,
             encryptedSignature.length);
     
-    //System.out.println("dataHash (" + dataHash.length + ") = " + Arrays.toString(dataHash));
-    //System.out.println("signature (" + signature.length + ") = " + Arrays.toString(signature));
-    //System.out.println("encryptedSignature (" + encryptedSignature.length + ") = " + Arrays.toString(encryptedSignature));
-    //System.out.println("trimmedEncryptedSignature (" + trimmedEncryptedSignature.length + ") = " + Arrays.toString(trimmedEncryptedSignature));
+    //System.out.println("dataHash (" + dataHash.length * 8 + " bits) = " + Arrays.toString(dataHash));
+    //System.out.println("signature (" + signature.length * 8 + " bits) = " + Arrays.toString(signature));
+    //System.out.println("encryptedSignature (" + encryptedSignature.length * 8 + " bits) = " + Arrays.toString(encryptedSignature));
+    //System.out.println("trimmedEncryptedSignature (" + trimmedEncryptedSignature.length * 8 + " bits) = " + Arrays.toString(trimmedEncryptedSignature));
     
     assertArrayEquals("The signature's verification failed.", dataHash, trimmedEncryptedSignature);
   }
