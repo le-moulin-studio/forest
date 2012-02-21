@@ -203,16 +203,16 @@ public class JceTest {
     
     assertArrayEquals("Shared secret should be the same on both sides.", aliceSideSecret, bobSideSecret);
     
-    //byte[] dhBase = BigIntegers.asUnsignedByteArray(dhParameterSpec.getG());
     //byte[] dhModulus = BigIntegers.asUnsignedByteArray(dhParameterSpec.getP());
+    //byte[] dhBase = BigIntegers.asUnsignedByteArray(dhParameterSpec.getG());
     //byte[] alicePrivateKeyData = BigIntegers.asUnsignedByteArray(((DHPrivateKey) aliceKeyPair.getPrivate()).getX());
     //byte[] alicePublicKeyData = BigIntegers.asUnsignedByteArray(((DHPublicKey) aliceKeyPair.getPublic()).getY());
     
     // Prints the parameters used by the diffie hellman algorithm.
-    //System.out.println(String.format("base G (%d bits) = %s",
-    //        dhBase.length * 8, Arrays.toString(dhBase)));
     //System.out.println(String.format("modulus P (%d bits) = %s",
     //        dhModulus.length * 8, Arrays.toString(dhModulus)));
+    //System.out.println(String.format("base G (%d bits) = %s",
+    //        dhBase.length * 8, Arrays.toString(dhBase)));
     //System.out.println(String.format("private exponent size in bits = %d",
     //        dhParameterSpec.getL()));
     
