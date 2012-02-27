@@ -9,12 +9,14 @@ import java.security.KeyPairGenerator;
 import java.security.MessageDigest;
 import java.security.SecureRandom;
 import java.security.Security;
+import java.security.Signature;
 import java.util.Arrays;
 import javax.crypto.Cipher;
 import javax.crypto.CipherOutputStream;
 import javax.crypto.KeyAgreement;
 import javax.crypto.spec.DHGenParameterSpec;
 import javax.crypto.spec.DHParameterSpec;
+import javax.crypto.spec.IvParameterSpec;
 import javax.crypto.spec.SecretKeySpec;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
 import static org.junit.Assert.*;
@@ -28,8 +30,6 @@ public class JceTest {
           + "a little Temporary Safety, "
           + "deserve neither Liberty nor Safety. "
           + "-- Benjamin Franklin";
-  
-  public final int userKeysize = 1024;
   
   public final String jceProviderName = "BC";
   
@@ -48,6 +48,9 @@ public class JceTest {
     Cipher encryptCipher = Cipher.getInstance(cipherName, jceProviderName);
     encryptCipher.init(Cipher.ENCRYPT_MODE, encryptionKey);
     
+    // Retreives the IV for decryption if they are needed.
+    byte[] iv = encryptCipher.getIV();
+    
     // Encrypt the data.
     CipherOutputStream encryptionOutputStream = new CipherOutputStream(encryptedOutputStream, encryptCipher);
     encryptionOutputStream.write(dataToEncrypt);
@@ -58,7 +61,7 @@ public class JceTest {
     // Prepare the objects to decrypt the data.
     ByteArrayOutputStream decryptedOutputStream = new ByteArrayOutputStream();
     Cipher decryptCipher = Cipher.getInstance(cipherName, jceProviderName);
-    decryptCipher.init(Cipher.DECRYPT_MODE, decryptionKey);
+    decryptCipher.init(Cipher.DECRYPT_MODE, decryptionKey, iv == null ? null : new IvParameterSpec(iv));
     
     // Decrypt the data.
     CipherOutputStream decryptionOutputStream = new CipherOutputStream(decryptedOutputStream, decryptCipher);
@@ -89,7 +92,9 @@ public class JceTest {
   }
 
   private void testAsymmetricCipher(String cipherName, int keySizeInBits) throws Exception {
-    KeyPairGenerator keyPairGenerator = KeyPairGenerator.getInstance(cipherName, jceProviderName);
+    int index = cipherName.indexOf("/");
+    String keyPairAlgoName = (index == -1) ? cipherName : cipherName.substring(0, index);
+    KeyPairGenerator keyPairGenerator = KeyPairGenerator.getInstance(keyPairAlgoName, jceProviderName);
     keyPairGenerator.initialize(keySizeInBits);
     KeyPair keyPair = keyPairGenerator.generateKeyPair();
     
@@ -98,13 +103,19 @@ public class JceTest {
 
   @Test
   public void testCiphers() throws Exception {
-    testSymmetricCipher("AES",   256); // keysizes in bits: 128, 192, 256.
-    testSymmetricCipher("CAST5", 128); // keysizes in bits: 40, 64, 80, 128.
-    testSymmetricCipher("CAST6", 256); // keysizes in bits: 128, 160, 192, 224, 256.
+    // keysizes in bits: 128, 192, 256.
+    testSymmetricCipher("AES", 256);
+    testSymmetricCipher("AES/CBC/ISO10126-2PADDING", 256);
+    testSymmetricCipher("AES/CTR/NOPADDING", 256);
+    testSymmetricCipher("AES/GCM/NOPADDING", 256);
     
-    testAsymmetricCipher("RSA",  2048); // keysizes in bits: any (commonly 1024, 2048, 4096)
+    // keysizes in bits: any (commonly 1024, 2048, 4096).
+    testAsymmetricCipher("RSA", 2048);
+    testAsymmetricCipher("RSA/NONE/PKCS1PADDING", 2048);
+    testAsymmetricCipher("RSA/NONE/OAEPPADDING", 2048);
   }
   
+  @Deprecated
   public void testSignature(String cipherName, int keySizeInBits, String hashName) throws Exception {
     // Let's define a data.
     byte[] dataToSign = famousQuote.getBytes("UTF-8");
@@ -158,9 +169,32 @@ public class JceTest {
     assertArrayEquals("The signature's verification failed.", dataHash, trimmedEncryptedSignature);
   }
   
+  public void testSignature2(String keyPairAlgoName, String signatureAlgoName, int keySizeInBits) throws Exception {
+    // Let's define a data.
+    byte[] dataToSign = famousQuote.getBytes("UTF-8");
+    
+    // Creates a key pair.
+    KeyPairGenerator keyPairGenerator = KeyPairGenerator.getInstance(keyPairAlgoName, jceProviderName);
+    keyPairGenerator.initialize(keySizeInBits);
+    KeyPair keyPair = keyPairGenerator.generateKeyPair();
+    
+    // Create the signature.
+    Signature signer = Signature.getInstance(signatureAlgoName, jceProviderName);
+    signer.initSign(keyPair.getPrivate());
+    signer.update(dataToSign);
+    byte[] signature = signer.sign();
+    
+    // Verify the signature.
+    Signature verifier = Signature.getInstance(signatureAlgoName, jceProviderName);
+    verifier.initVerify(keyPair.getPublic());
+    verifier.update(dataToSign);
+    assertTrue(verifier.verify(signature));
+  }
+  
   @Test
   public void testSignatures() throws Exception {
-    testSignature("RSA", 1024, "SHA-256");
+    //testSignature("RSA", 1024, "SHA-256");
+    testSignature2("RSA", "SHA256withRSA/PSS", 1024);
   }
   
   public void testSharedSecret(String keyAgreementName) throws Exception {
