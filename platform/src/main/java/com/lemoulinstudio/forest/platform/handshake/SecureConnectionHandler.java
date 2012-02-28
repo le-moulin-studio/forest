@@ -1,14 +1,15 @@
 package com.lemoulinstudio.forest.platform.handshake;
 
 import java.math.BigInteger;
+import java.security.GeneralSecurityException;
 import java.security.InvalidKeyException;
 import java.security.KeyPair;
+import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.security.NoSuchProviderException;
 import java.security.PublicKey;
 import java.security.interfaces.RSAPrivateKey;
 import java.security.interfaces.RSAPublicKey;
-import java.util.Arrays;
 import javax.crypto.Cipher;
 import javax.crypto.KeyAgreement;
 import javax.crypto.NoSuchPaddingException;
@@ -19,7 +20,14 @@ import javax.crypto.spec.SecretKeySpec;
 
 public class SecureConnectionHandler {
   
-  public static final String jceProviderName = "BC";
+  protected static final String jceProviderName        = "BC";
+  
+  protected static final String asymmetricCipherDesc   = "RSA/NONE/OAEPPADDING";
+  
+  protected static final String symmetricAlgorithmName = "AES";
+  protected static final String symmetricCipherDesc    = "AES/GCM/NOPADDING";
+  
+  protected static final String signatureDesc          = "SHA256withRSA/PSS";
   
   // TODO: choose some definite parameters later.
   public static final DHParameterSpec dhParameterSpec = new DHParameterSpec(
@@ -46,6 +54,27 @@ public class SecureConnectionHandler {
     this.hisPublicKey = (RSAPublicKey)  hisPublicKey;
   }
   
+  protected byte[] getHash(byte[] data, int hashSizeInBits) {
+    String digestAlgoName;
+    switch (hashSizeInBits) {
+      case 128: digestAlgoName = "MD5"; break;
+      case 160: digestAlgoName = "SHA-1"; break;
+      case 224: digestAlgoName = "SHA-224"; break;
+      case 256: digestAlgoName = "SHA-256"; break;
+      case 384: digestAlgoName = "SHA-384"; break;
+      case 512: digestAlgoName = "SHA-512"; break;
+      default: throw new IllegalArgumentException("Unsupported hash size (in bits).");
+    }
+      
+    try {
+      MessageDigest digest = MessageDigest.getInstance(digestAlgoName, jceProviderName);
+      digest.update(data);
+      return digest.digest();
+    } catch (GeneralSecurityException ex) {
+      throw new Error("Human Error");
+    }
+  }
+
   protected void setupCiphersFromSharedSecret()
           throws NoSuchAlgorithmException, NoSuchProviderException, InvalidKeyException, NoSuchPaddingException {
     // Compute the shared secret.
@@ -55,18 +84,19 @@ public class SecureConnectionHandler {
     byte[] sharedSecret = diffieHellmanKeyAgreement.generateSecret();
     
     // Derives an AES-256 key from the shared secret.
-    byte[] aesKeyData = Arrays.copyOfRange(sharedSecret, 0, 256);
-    SecretKeySpec aesKeySpec = new SecretKeySpec(aesKeyData, "AES");
+    byte[] aesKeyData = getHash(sharedSecret, 256);
+    SecretKeySpec aesKeySpec = new SecretKeySpec(aesKeyData, symmetricAlgorithmName);
     
     // Creates the encryption cipher.
-    encryptionCipher = Cipher.getInstance("AES", jceProviderName);
+    encryptionCipher = Cipher.getInstance(symmetricCipherDesc, jceProviderName);
     encryptionCipher.init(Cipher.ENCRYPT_MODE, aesKeySpec);
     
     // Creates the decryption cipher.
-    decryptionCipher = Cipher.getInstance("AES", jceProviderName);
+    decryptionCipher = Cipher.getInstance(symmetricCipherDesc, jceProviderName);
     decryptionCipher.init(Cipher.DECRYPT_MODE, aesKeySpec);
   }
   
+
   // TODO: It would be even better if this object get garbage-collected after the handshake, in fact.
   protected void clearKeyReferences() {
     myPublicKey = null;

@@ -22,8 +22,4 @@ public class MessageDigestOutputStream extends OutputStream {
     messageDigest.update(byteArray, offset, length);
   }
 
-  public byte[] digest() {
-    return messageDigest.digest();
-  }
-  
 }

@@ -105,6 +105,7 @@ public class CryptoUtil {
     pgpPublicKey.encode(outputStream);
     
     if (armor) {
+      // Note: the underlying stream is not closed.
       outputStream.close();
     }
   }
