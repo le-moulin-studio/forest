@@ -7,6 +7,7 @@ import java.io.ByteArrayOutputStream;
 import java.security.KeyPair;
 import java.security.PublicKey;
 import java.security.Security;
+import java.util.Date;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
 import static org.junit.Assert.*;
 import org.junit.Before;
@@ -87,6 +88,28 @@ public class CryptoUtilTest {
     // Prints the keys.
     //KeyExporter.exportPublicKey(originalAlicePublicKey, System.out, true);
     //KeyExporter.exportPublicKey(importedAlicePublicKey, System.out, true);
+  }
+  
+  @Test
+  public void testPublicKeyExportConsistency() throws Exception {
+    // Creates a new user.
+    User alice = userFactory.createUser("Alice");
+    PublicKey alicePublicKey = alice.getKeyPair().getPublic();
+    
+    // Exports its public key.
+    ByteArrayOutputStream publicKeyOutputStream1 = new ByteArrayOutputStream();
+    CryptoUtil.exportPublicKey(alicePublicKey, publicKeyOutputStream1, true);
+    
+    // Wait a little bit.
+    Thread.sleep(500);
+    
+    // Exports its public key again.
+    ByteArrayOutputStream publicKeyOutputStream2 = new ByteArrayOutputStream();
+    CryptoUtil.exportPublicKey(alicePublicKey, publicKeyOutputStream2, true);
+    
+    assertArrayEquals("The 2 exported keys should be identical.",
+            publicKeyOutputStream1.toByteArray(),
+            publicKeyOutputStream2.toByteArray());
   }
   
 }

@@ -48,15 +48,15 @@ public class SecureConnectionHandlerTest {
     int expectedRequestSize = connectionRequest.length;
     int expectedResponseSize = connectionResponse.length;
     
-    for (int i = 0; i < 1024; i++) {
+    for (int i = 0; i < 16; i++) {
       connectionRequest = clientHandler.createConnectionRequest();
       connectionResponse = serverHandler.handleConnectionRequest(connectionRequest);
       assertEquals(connectionRequest.length, expectedRequestSize);
       assertEquals(connectionResponse.length, expectedResponseSize);
     }
     
-    System.out.println("Expected request size = " + expectedRequestSize);
-    System.out.println("Expected response size = " + expectedResponseSize);
+    //System.out.println("Expected request size = " + expectedRequestSize);
+    //System.out.println("Expected response size = " + expectedResponseSize);
   }
   
   private void testEncryptedCommunicationChannel(
@@ -67,12 +67,14 @@ public class SecureConnectionHandlerTest {
       CipherOutputStream encryptionOutputStream = new CipherOutputStream(encryptedArray, encryptionCipher);
       encryptionOutputStream.write(message);
       encryptionOutputStream.flush(); // Note: it doesn't totally flush for block ciphers.
+      encryptionOutputStream.close(); // .. so we still need to close.
       byte[] encryptedMessage = encryptedArray.toByteArray();
       
       ByteArrayOutputStream decryptedArray = new ByteArrayOutputStream();
       CipherOutputStream decryptionOutputStream = new CipherOutputStream(decryptedArray, decryptionCipher);
       decryptionOutputStream.write(encryptedMessage);
       decryptionOutputStream.flush(); // Note: it doesn't totally flush for block ciphers.
+      decryptionOutputStream.close(); // .. so we still need to close.
       byte[] decryptedMessage = decryptedArray.toByteArray();
       
       assertArrayEquals("The message should be the same before encryption and after decryption",
@@ -92,7 +94,7 @@ public class SecureConnectionHandlerTest {
     // Establishes a connection.
     byte[] connectionRequest = clientHandler.createConnectionRequest();
     byte[] connectionResponse = serverHandler.handleConnectionRequest(connectionRequest);
-    clientHandler.handleConnectionAnswer(connectionResponse);
+    clientHandler.handleConnectionResponse(connectionResponse);
     
     // Random message to be exchanged between the client and the server.
     byte[] testMessage = new byte[1024];
@@ -110,5 +112,5 @@ public class SecureConnectionHandlerTest {
             clientHandler.getDecryptionCipher(),
             testMessage);
   }
-
+  
 }

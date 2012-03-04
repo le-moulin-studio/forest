@@ -95,7 +95,7 @@ public class CryptoUtil {
     PGPPublicKey pgpPublicKey = new PGPPublicKey(
             PGPPublicKey.RSA_GENERAL,
             publicKey,
-            new Date(),
+            new Date(0),
             "BC");
     
     if (armor) {

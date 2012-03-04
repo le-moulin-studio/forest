@@ -70,7 +70,7 @@ public class ClientSecureConnectionHandler extends SecureConnectionHandler {
 
     // First 2 bytes of my public key.
     byte[] myPublicKeyShortHash = Arrays.copyOfRange(
-            BigIntegers.asUnsignedByteArray(myPublicKey.getPublicExponent()), 0, 2);
+            BigIntegers.asUnsignedByteArray(myPublicKey.getModulus()), 0, 2);
     aesOutputStream.write(myPublicKeyShortHash);
 
     // Create the signature.
@@ -92,12 +92,12 @@ public class ClientSecureConnectionHandler extends SecureConnectionHandler {
     return requestOutputStream.toByteArray();
   }
 
-  public void handleConnectionAnswer(byte[] responseData)
+  public void handleConnectionResponse(byte[] responseData)
           throws InvalidMessage, Exception {
     ByteArrayInputStream responseInputStream = new ByteArrayInputStream(responseData);
     
     // Reads the wrapped key.
-    byte[] wrappedKey = new byte[512];
+    byte[] wrappedKey = new byte[4096 / 8];
     responseInputStream.read(wrappedKey);
     
     // Unwraps it.
@@ -118,7 +118,7 @@ public class ClientSecureConnectionHandler extends SecureConnectionHandler {
     
     // Reads the signature's hash.
     byte[] hisSignatureHash = new byte[256 / 8];
-    aesInputStream.read(hisSignatureHash);
+    aesInputStream.readFully(hisSignatureHash);
     
     // Ignores the remaining data, if any.
     aesInputStream.close();

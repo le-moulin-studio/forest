@@ -12,10 +12,10 @@ import java.security.SecureRandom;
 import java.security.Signature;
 import java.security.interfaces.RSAPublicKey;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Set;
 import javax.crypto.Cipher;
-import javax.crypto.CipherInputStream;
 import javax.crypto.CipherOutputStream;
 import javax.crypto.interfaces.DHPrivateKey;
 import javax.crypto.interfaces.DHPublicKey;
@@ -41,11 +41,8 @@ public class ServerSecureConnectionHandler extends SecureConnectionHandler {
 
   public byte[] handleConnectionRequest(byte[] requestData)
           throws Exception {
-    ByteArrayInputStream requestInputStream = new ByteArrayInputStream(requestData);
-    
     // Reads the wrapped key.
-    byte[] wrappedKey = new byte[512];
-    requestInputStream.read(wrappedKey);
+    byte[] wrappedKey = Arrays.copyOfRange(requestData, 0, 4096 / 8);
     
     // Unwraps it.
     Cipher requestRsaCipher = Cipher.getInstance(asymmetricCipherDesc, jceProviderName);
@@ -60,19 +57,25 @@ public class ServerSecureConnectionHandler extends SecureConnectionHandler {
     requestAesCipher.init(Cipher.DECRYPT_MODE,
             new SecretKeySpec(requestAesKeyData, symmetricAlgorithmName),
             new IvParameterSpec(requestInitialVector));
-    DataInputStream aesInputStream = new DataInputStream(
-            new CipherInputStream(requestInputStream, requestAesCipher));
+    
+    // Reads the encrypted aes block.
+    byte[] requestEncryptedAesBlock = Arrays.copyOfRange(requestData, 4096 / 8, requestData.length);
+    
+    // Decrypts it.
+    byte[] requestDecryptedAesBlock = requestAesCipher.doFinal(requestEncryptedAesBlock);
+    
+    DataInputStream aesInputStream = new DataInputStream(new ByteArrayInputStream(requestDecryptedAesBlock));
     
     // Reads the timestamp.
     long hisTimestamp = aesInputStream.readLong();
     
     // First 2 bytes of his public key.
     byte[] hisPublicKeyShortHash = new byte[2];
-    aesInputStream.read(hisPublicKeyShortHash);
+    aesInputStream.readFully(hisPublicKeyShortHash);
     
     // Reads the signature.
-    byte[] hisSignature = new byte[512];
-    aesInputStream.read(hisSignature);
+    byte[] hisSignature = new byte[4096 / 8];
+    aesInputStream.readFully(hisSignature);
     
     // Ignores the remaining data, if any.
     aesInputStream.close();
@@ -149,7 +152,7 @@ public class ServerSecureConnectionHandler extends SecureConnectionHandler {
     
     keyLoop:
     for (RSAPublicKey contactKey : contactsPublicKey) {
-      byte[] keyData = BigIntegers.asUnsignedByteArray(contactKey.getPublicExponent());
+      byte[] keyData = BigIntegers.asUnsignedByteArray(contactKey.getModulus());
       if (publicKeyStart.length > keyData.length) continue;
       for (int i = 0; i < publicKeyStart.length; i++) {
         if (publicKeyStart[i] != keyData[i]) {
