@@ -8,6 +8,7 @@ import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.security.KeyPair;
 import java.security.KeyPairGenerator;
+import java.security.PublicKey;
 import java.security.SecureRandom;
 import java.security.Signature;
 import java.security.interfaces.RSAPublicKey;
@@ -25,15 +26,15 @@ import org.bouncycastle.util.BigIntegers;
 
 public class ServerSecureConnectionHandler extends SecureConnectionHandler {
   
-  private Set<RSAPublicKey> contactsPublicKey;
+  private Set<PublicKey> contactsPublicKey;
   
   public ServerSecureConnectionHandler(KeyPair ownKeyPair,
-                                       Set<RSAPublicKey> contactsPublicKey) {
+                                       Set<PublicKey> contactsPublicKey) {
     this(ownKeyPair, contactsPublicKey, new SecureRandom());
   }
 
   public ServerSecureConnectionHandler(KeyPair ownKeyPair,
-                                       Set<RSAPublicKey> contactsPublicKey,
+                                       Set<PublicKey> contactsPublicKey,
                                        SecureRandom secureRandom) {
     super(ownKeyPair, secureRandom);
     this.contactsPublicKey = contactsPublicKey;
@@ -151,15 +152,18 @@ public class ServerSecureConnectionHandler extends SecureConnectionHandler {
     List<RSAPublicKey> result = new ArrayList<RSAPublicKey>();
     
     keyLoop:
-    for (RSAPublicKey contactKey : contactsPublicKey) {
-      byte[] keyData = BigIntegers.asUnsignedByteArray(contactKey.getModulus());
-      if (publicKeyStart.length > keyData.length) continue;
-      for (int i = 0; i < publicKeyStart.length; i++) {
-        if (publicKeyStart[i] != keyData[i]) {
-           continue keyLoop;
+    for (PublicKey contactKey : contactsPublicKey) {
+      if (contactKey instanceof RSAPublicKey) {
+        RSAPublicKey rsaContactKey = (RSAPublicKey) contactKey;
+        byte[] keyData = BigIntegers.asUnsignedByteArray(rsaContactKey.getModulus());
+        if (publicKeyStart.length > keyData.length) continue;
+        for (int i = 0; i < publicKeyStart.length; i++) {
+          if (publicKeyStart[i] != keyData[i]) {
+            continue keyLoop;
+          }
         }
+        result.add(rsaContactKey);
       }
-      result.add(contactKey);
     }
     
     return result;

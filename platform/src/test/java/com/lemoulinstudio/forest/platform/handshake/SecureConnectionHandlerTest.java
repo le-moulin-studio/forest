@@ -6,7 +6,6 @@ import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.security.SecureRandom;
 import java.security.Security;
-import java.security.interfaces.RSAPublicKey;
 import java.util.Collections;
 import javax.crypto.Cipher;
 import javax.crypto.CipherOutputStream;
@@ -40,7 +39,7 @@ public class SecureConnectionHandlerTest {
     
     ServerSecureConnectionHandler serverHandler = new ServerSecureConnectionHandler(
             bob.getKeyPair(),
-            Collections.singleton((RSAPublicKey) alice.getKeyPair().getPublic()));
+            Collections.singleton(alice.getKeyPair().getPublic()));
     
     byte[] connectionRequest = clientHandler.createConnectionRequest();
     byte[] connectionResponse = serverHandler.handleConnectionRequest(connectionRequest);
@@ -89,7 +88,7 @@ public class SecureConnectionHandlerTest {
     
     ServerSecureConnectionHandler serverHandler = new ServerSecureConnectionHandler(
             bob.getKeyPair(),
-            Collections.singleton((RSAPublicKey) alice.getKeyPair().getPublic()));
+            Collections.singleton(alice.getKeyPair().getPublic()));
     
     // Establishes a connection.
     byte[] connectionRequest = clientHandler.createConnectionRequest();

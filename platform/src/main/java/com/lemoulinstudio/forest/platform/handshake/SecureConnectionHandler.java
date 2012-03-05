@@ -5,6 +5,7 @@ import java.security.GeneralSecurityException;
 import java.security.InvalidKeyException;
 import java.security.KeyPair;
 import java.security.MessageDigest;
+import java.security.PublicKey;
 import java.security.SecureRandom;
 import java.security.interfaces.RSAPrivateKey;
 import java.security.interfaces.RSAPublicKey;
@@ -16,7 +17,7 @@ import javax.crypto.spec.DHParameterSpec;
 import javax.crypto.spec.IvParameterSpec;
 import javax.crypto.spec.SecretKeySpec;
 
-// TODO: Garbage-collect this object after the handshake is over.
+// Note: This object should be garbage-collected after the handshake is over.
 public class SecureConnectionHandler {
   
   protected static final String jceProviderName        = "BC";
@@ -97,6 +98,10 @@ public class SecureConnectionHandler {
     // Creates the decryption cipher.
     decryptionCipher = Cipher.getInstance(symmetricCipherDesc, jceProviderName);
     decryptionCipher.init(Cipher.DECRYPT_MODE, aesKeySpec, ivParameterSpec);
+  }
+
+  public PublicKey getHisPublicKey() {
+    return hisPublicKey;
   }
   
   public Cipher getEncryptionCipher() {
