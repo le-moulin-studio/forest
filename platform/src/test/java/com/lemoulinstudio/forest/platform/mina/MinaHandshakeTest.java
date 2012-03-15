@@ -1,10 +1,11 @@
 package com.lemoulinstudio.forest.platform.mina;
 
-import com.lemoulinstudio.forest.platform.User;
-import com.lemoulinstudio.forest.platform.UserFactory;
+import com.lemoulinstudio.forest.platform.user.Contact;
+import com.lemoulinstudio.forest.platform.user.User;
+import com.lemoulinstudio.forest.platform.user.UserFactory;
+import java.net.InetAddress;
+import java.net.UnknownHostException;
 import java.security.Security;
-import java.util.Collections;
-import java.util.Random;
 import org.apache.mina.core.session.IoSession;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
 import org.junit.BeforeClass;
@@ -25,30 +26,29 @@ public class MinaHandshakeTest {
     UserFactory userFactory = new UserFactory(userKeysize);
     alice = userFactory.createUser("Alice");
     bob = userFactory.createUser("Bob");
+    
+    alice.getContactList().add(createContact(bob));
+    bob.getContactList().add(createContact(alice));
+  }
+  
+  private static Contact createContact(User user) throws UnknownHostException {
+    return new Contact(
+            user.getName(),
+            user.getKeyPair().getPublic(),
+            InetAddress.getLocalHost(),
+            user.getPort());
   }
   
   @Test
-  public void testMinaHandshake() throws Exception {
+  public void testMinaAndSmall() throws Exception {
     Server server = new Server();
+    server.start(alice);
+    
     Client client = new Client();
-    int port = 8000 + new Random().nextInt(1000);
+    IoSession clientSession = client.connect(bob, bob.getContactList().get(0));
     
-    server.start(
-            alice.getKeyPair(),
-            Collections.singleton(bob.getKeyPair().getPublic()),
-            port,
-            new HelloWorldMessageHandler(true));
-    
-    IoSession clientSession = client.connect(
-            bob.getKeyPair(),
-            alice.getKeyPair().getPublic(),
-            "localhost",
-            port,
-            new HelloWorldMessageHandler(false));
-    
-    while (!clientSession.isClosing()) {
+    while (!clientSession.isClosing())
       Thread.sleep(20);
-    }
     
     server.close();
   }

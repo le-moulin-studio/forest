@@ -2,6 +2,8 @@ package com.lemoulinstudio.forest.platform.handshake;
 
 import com.lemoulinstudio.forest.platform.crypto.CryptoUtil;
 import com.lemoulinstudio.forest.platform.crypto.SignatureOutputStream;
+import com.lemoulinstudio.forest.platform.user.Contact;
+import com.lemoulinstudio.forest.platform.user.User;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.DataInputStream;
@@ -15,7 +17,6 @@ import java.security.interfaces.RSAPublicKey;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
-import java.util.Set;
 import javax.crypto.Cipher;
 import javax.crypto.CipherOutputStream;
 import javax.crypto.interfaces.DHPrivateKey;
@@ -26,20 +27,22 @@ import org.bouncycastle.util.BigIntegers;
 
 public class ServerSecureConnectionHandler extends SecureConnectionHandler {
   
-  private Set<PublicKey> contactsPublicKey;
+  private User user;
+  private Contact contact;
   
-  public ServerSecureConnectionHandler(KeyPair ownKeyPair,
-                                       Set<PublicKey> contactsPublicKey) {
-    this(ownKeyPair, contactsPublicKey, new SecureRandom());
+  public ServerSecureConnectionHandler(User user) {
+    this(user, new SecureRandom());
   }
 
-  public ServerSecureConnectionHandler(KeyPair ownKeyPair,
-                                       Set<PublicKey> contactsPublicKey,
-                                       SecureRandom secureRandom) {
-    super(ownKeyPair, secureRandom);
-    this.contactsPublicKey = contactsPublicKey;
+  public ServerSecureConnectionHandler(User user, SecureRandom secureRandom) {
+    super(user.getKeyPair(), secureRandom);
+    this.user = user;
   }
 
+  public Contact getContact() {
+    return contact;
+  }
+  
   public byte[] handleConnectionRequest(byte[] requestData)
           throws Exception {
     // Reads the wrapped key.
@@ -88,17 +91,18 @@ public class ServerSecureConnectionHandler extends SecureConnectionHandler {
     }
     
     // Find candidates for the origin of the message.
-    for (RSAPublicKey candidatePublicKey : findPublicKeyCandidates(hisPublicKeyShortHash)) {
+    for (Contact candidate : findCandidates(hisPublicKeyShortHash)) {
       // Verify the signature for this candidate.
       Signature verifier = Signature.getInstance(signatureDesc, jceProviderName);
-      verifier.initVerify(candidatePublicKey);
+      verifier.initVerify(candidate.getPublicKey());
       DataOutputStream dos = new DataOutputStream(new SignatureOutputStream(verifier));
       dos.write(requestAesKeyData);
       dos.writeLong(hisTimestamp);
       CryptoUtil.exportPublicKey(myPublicKey, dos, false);
       dos.close();
       if (verifier.verify(hisSignature)) {
-        hisPublicKey = candidatePublicKey;
+        contact = candidate;
+        hisPublicKey = (RSAPublicKey) candidate.getPublicKey();
         break;
       }
     }
@@ -148,13 +152,14 @@ public class ServerSecureConnectionHandler extends SecureConnectionHandler {
   }
 
   // TODO: this part will need to be optimized.
-  private List<RSAPublicKey> findPublicKeyCandidates(byte[] publicKeyStart) {
-    List<RSAPublicKey> result = new ArrayList<RSAPublicKey>();
+  private List<Contact> findCandidates(byte[] publicKeyStart) {
+    List<Contact> result = new ArrayList<Contact>();
     
     keyLoop:
-    for (PublicKey contactKey : contactsPublicKey) {
-      if (contactKey instanceof RSAPublicKey) {
-        RSAPublicKey rsaContactKey = (RSAPublicKey) contactKey;
+    for (Contact candidate : user.getContactList()) {
+      PublicKey candidateKey = candidate.getPublicKey();
+      if (candidateKey instanceof RSAPublicKey) {
+        RSAPublicKey rsaContactKey = (RSAPublicKey) candidateKey;
         byte[] keyData = BigIntegers.asUnsignedByteArray(rsaContactKey.getModulus());
         if (publicKeyStart.length > keyData.length) continue;
         for (int i = 0; i < publicKeyStart.length; i++) {
@@ -162,11 +167,11 @@ public class ServerSecureConnectionHandler extends SecureConnectionHandler {
             continue keyLoop;
           }
         }
-        result.add(rsaContactKey);
+        result.add(candidate);
       }
     }
     
     return result;
   }
-  
+
 }

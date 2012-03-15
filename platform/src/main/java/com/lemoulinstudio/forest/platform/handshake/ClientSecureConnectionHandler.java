@@ -2,13 +2,14 @@ package com.lemoulinstudio.forest.platform.handshake;
 
 import com.lemoulinstudio.forest.platform.crypto.CryptoUtil;
 import com.lemoulinstudio.forest.platform.crypto.SignatureOutputStream;
+import com.lemoulinstudio.forest.platform.user.Contact;
+import com.lemoulinstudio.forest.platform.user.User;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.security.KeyPair;
 import java.security.KeyPairGenerator;
-import java.security.PublicKey;
 import java.security.SecureRandom;
 import java.security.Signature;
 import java.security.interfaces.RSAPublicKey;
@@ -26,13 +27,13 @@ public class ClientSecureConnectionHandler extends SecureConnectionHandler {
   
   private byte[] mySignatureHash;
 
-  public ClientSecureConnectionHandler(KeyPair ownKeyPair, PublicKey hisPublicKey) {
-    this(ownKeyPair, hisPublicKey, new SecureRandom());
+  public ClientSecureConnectionHandler(User user, Contact contact) {
+    this(user, contact, new SecureRandom());
   }
 
-  public ClientSecureConnectionHandler(KeyPair ownKeyPair, PublicKey hisPublicKey, SecureRandom secureRandom) {
-    super(ownKeyPair, secureRandom);
-    this.hisPublicKey = (RSAPublicKey) hisPublicKey;
+  public ClientSecureConnectionHandler(User user, Contact contact, SecureRandom secureRandom) {
+    super(user.getKeyPair(), secureRandom);
+    this.hisPublicKey = (RSAPublicKey) contact.getPublicKey();
   }
 
   // TODO: Understand why one should never use the same RSA key to sign and to encrypt,

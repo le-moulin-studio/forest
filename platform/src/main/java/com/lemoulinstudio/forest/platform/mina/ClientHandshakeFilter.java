@@ -1,8 +1,8 @@
 package com.lemoulinstudio.forest.platform.mina;
 
 import com.lemoulinstudio.forest.platform.handshake.ClientSecureConnectionHandler;
-import java.security.KeyPair;
-import java.security.PublicKey;
+import com.lemoulinstudio.forest.platform.user.Contact;
+import com.lemoulinstudio.forest.platform.user.User;
 import org.apache.mina.core.buffer.IoBuffer;
 import org.apache.mina.core.filterchain.IoFilterAdapter;
 import org.apache.mina.core.session.AttributeKey;
@@ -13,12 +13,12 @@ public class ClientHandshakeFilter extends IoFilterAdapter {
   
   private final AttributeKey HANDSHAKE_HANDLER = new AttributeKey(ClientHandshakeFilter.class, "handshakeHandler");
 
-  private KeyPair ownKeyPair;
-  private PublicKey contactPublicKey;
+  private final User user;
+  private final Contact contact;
 
-  public ClientHandshakeFilter(KeyPair ownKeyPair, PublicKey contactPublicKey) {
-    this.ownKeyPair = ownKeyPair;
-    this.contactPublicKey = contactPublicKey;
+  public ClientHandshakeFilter(User user, Contact contact) {
+    this.user = user;
+    this.contact = contact;
   }
 
   @Override
@@ -29,7 +29,7 @@ public class ClientHandshakeFilter extends IoFilterAdapter {
   @Override
   public void sessionOpened(NextFilter nextFilter, IoSession session) throws Exception {
     // Creates an handshake handler and attach it to the session.
-    ClientSecureConnectionHandler handshakeHandler = new ClientSecureConnectionHandler(ownKeyPair, contactPublicKey);
+    ClientSecureConnectionHandler handshakeHandler = new ClientSecureConnectionHandler(user, contact);
     session.setAttribute(HANDSHAKE_HANDLER, handshakeHandler);
     
     // Create and send the connection request.
@@ -65,16 +65,23 @@ public class ClientHandshakeFilter extends IoFilterAdapter {
     session.setAttribute(CipherFilter.ENCRYPTION_CIPHER, handshakeHandler.getEncryptionCipher());
     session.setAttribute(CipherFilter.DECRYPTION_CIPHER, handshakeHandler.getDecryptionCipher());
     
-    // We create the next filter and add it to the filter chain.
-    CipherFilter cipherFilter = new CipherFilter();
-    session.getFilterChain().getEntry(this).addAfter("cipher", cipherFilter);
+    // We attach some information about the connection.
+    session.setAttribute(ForestIoHandler.INITIATED_BY_ME, Boolean.TRUE);
+    session.setAttribute(ForestIoHandler.USER, user);
+    session.setAttribute(ForestIoHandler.CONTACT, contact);
+    
+    // We create the cipher filter and add it to the filter chain.
+    session.getFilterChain().getEntry(this).addAfter("cipher", CipherFilter.getInstance());
+    
+    // We create the codec filter and add it to the filter chain.
+    session.getFilterChain().getEntry("cipher").addAfter("codec", PacketFilter.getInstance());
+    
+    // We remove this filter from the filter chain.
+    session.getFilterChain().remove(this);
     
     // We notify the next filter about a created session.
     nextFilter.sessionCreated(session);
     nextFilter.sessionOpened(session);
-    
-    // We remove this filter from the filter chain.
-    session.getFilterChain().remove(this);
     
     // Don't forward the event to the next filter.
   }

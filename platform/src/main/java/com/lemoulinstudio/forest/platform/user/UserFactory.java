@@ -1,4 +1,4 @@
-package com.lemoulinstudio.forest.platform;
+package com.lemoulinstudio.forest.platform.user;
 
 import com.lemoulinstudio.forest.platform.crypto.CryptoUtil;
 import java.io.ByteArrayInputStream;
@@ -48,13 +48,13 @@ public class UserFactory {
             new ByteArrayInputStream(secretKeyOutputStream.toByteArray()),
             "".toCharArray(), false);
     
-    return new User(importedKeyPair, name);
+    return new User(name, importedKeyPair);
   }
   
   public User createUser(String name, InputStream inputStream, char[] passPhrase, boolean armor)
           throws IOException, NoSuchProviderException, PGPException {
     KeyPair keyPair = CryptoUtil.importKeyPair(inputStream, passPhrase, armor);
-    return new User(keyPair, name);
+    return new User(name, keyPair);
   }
 
 }

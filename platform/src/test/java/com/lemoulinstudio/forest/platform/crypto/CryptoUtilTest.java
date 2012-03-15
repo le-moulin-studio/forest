@@ -1,7 +1,7 @@
 package com.lemoulinstudio.forest.platform.crypto;
 
-import com.lemoulinstudio.forest.platform.User;
-import com.lemoulinstudio.forest.platform.UserFactory;
+import com.lemoulinstudio.forest.platform.user.User;
+import com.lemoulinstudio.forest.platform.user.UserFactory;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.security.KeyPair;

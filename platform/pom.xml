@@ -1,49 +1,85 @@
-<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-  xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
   <modelVersion>4.0.0</modelVersion>
-
-  <groupId>com.lemoulinstudio.forest</groupId>
-  <artifactId>platform</artifactId>
-  <version>1.0-SNAPSHOT</version>
-  <packaging>jar</packaging>
-
+  
+  <parent>
+    <groupId>com.lemoulinstudio.forest</groupId>
+    <artifactId>forest-parent</artifactId>
+    <version>1.0-SNAPSHOT</version>
+  </parent>
+  
   <name>Forest Platform</name>
-  <url>http://www.le-moulin-studio.com/forest/</url>
-
-  <properties>
-    <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-  </properties>
+  <artifactId>platform</artifactId>
+  <packaging>jar</packaging>
 
   <dependencies>
     <dependency>
+      <groupId>com.lemoulinstudio.small</groupId>
+      <artifactId>small-model</artifactId>
+    </dependency>
+
+    <dependency>
+      <groupId>com.lemoulinstudio.small</groupId>
+      <artifactId>small-annotation-processor</artifactId>
+    </dependency>
+
+    <dependency>
+      <groupId>com.lemoulinstudio.small</groupId>
+      <artifactId>small-java</artifactId>
+    </dependency>
+    
+    <dependency>
       <groupId>org.bouncycastle</groupId>
       <artifactId>bcprov-jdk16</artifactId>
-      <version>1.46</version>
     </dependency>
     
     <dependency>
       <groupId>org.bouncycastle</groupId>
       <artifactId>bcpg-jdk16</artifactId>
-      <version>1.46</version>
     </dependency>
     
     <dependency>
       <groupId>org.apache.mina</groupId>
       <artifactId>mina-core</artifactId>
-      <version>2.0.4</version>
     </dependency>
     
     <!--dependency>
       <groupId>org.apache.mina</groupId>
       <artifactId>mina-example</artifactId>
-      <version>2.0.4</version>
     </dependency-->
     
     <dependency>
       <groupId>junit</groupId>
       <artifactId>junit</artifactId>
-      <version>4.8.2</version>
       <scope>test</scope>
     </dependency>
   </dependencies>
+  
+  <build>
+    <plugins>
+      <plugin>
+        <groupId>com.lemoulinstudio.small</groupId>
+        <artifactId>small-maven-plugin</artifactId>
+        <version>${small.version}</version>
+        <executions>
+          <execution>
+            <id>node-source-generation</id>
+            <phase>generate-sources</phase>
+            <goals>
+              <goal>generate-rpc-files</goal>
+            </goals>
+            <configuration>
+              <hostType>peer</hostType>
+              <serviceBasePackage>com.lemoulinstudio.forest.platform.service</serviceBasePackage>
+              <callerObjectClass>com.lemoulinstudio.forest.platform.Contact</callerObjectClass>
+              <verbose>true</verbose>
+            </configuration>
+          </execution>
+        </executions>
+      </plugin>
+    </plugins>
+  </build>
+  
 </project>

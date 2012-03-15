@@ -9,6 +9,7 @@ import java.security.NoSuchProviderException;
 import java.security.PublicKey;
 import java.security.SecureRandom;
 import java.security.SignatureException;
+import java.security.interfaces.RSAPublicKey;
 import java.util.Date;
 import org.bouncycastle.bcpg.ArmoredInputStream;
 import org.bouncycastle.bcpg.ArmoredOutputStream;
@@ -108,6 +109,13 @@ public class CryptoUtil {
       // Note: the underlying stream is not closed.
       outputStream.close();
     }
+  }
+
+  public static boolean isSmallerThan(PublicKey key0, PublicKey key1) {
+    RSAPublicKey rsaKey0 = (RSAPublicKey) key0;
+    RSAPublicKey rsaKey1 = (RSAPublicKey) key1;
+    
+    return rsaKey0.getModulus().compareTo(rsaKey1.getModulus()) <= 0;
   }
   
 }

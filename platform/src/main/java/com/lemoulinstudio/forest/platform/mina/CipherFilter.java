@@ -16,6 +16,15 @@ public class CipherFilter extends WriteRequestFilter {
   public static final AttributeKey DECRYPTION_CIPHER =
           new AttributeKey(CipherFilter.class, "decryptionCipher");
 
+  private static final CipherFilter instance = new CipherFilter();
+
+  public static CipherFilter getInstance() {
+    return instance;
+  }
+  
+  private CipherFilter() {
+  }
+
   @Override
   public void messageReceived(NextFilter nextFilter, IoSession session, Object message) throws Exception {
     IoBuffer cipherTextBuffer = (IoBuffer) message;

@@ -1,12 +1,14 @@
 package com.lemoulinstudio.forest.platform.handshake;
 
-import com.lemoulinstudio.forest.platform.User;
-import com.lemoulinstudio.forest.platform.UserFactory;
+import com.lemoulinstudio.forest.platform.user.Contact;
+import com.lemoulinstudio.forest.platform.user.User;
+import com.lemoulinstudio.forest.platform.user.UserFactory;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
+import java.net.InetAddress;
+import java.net.UnknownHostException;
 import java.security.SecureRandom;
 import java.security.Security;
-import java.util.Collections;
 import javax.crypto.Cipher;
 import javax.crypto.CipherOutputStream;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
@@ -29,17 +31,23 @@ public class SecureConnectionHandlerTest {
     UserFactory userFactory = new UserFactory(userKeysize);
     alice = userFactory.createUser("Alice");
     bob = userFactory.createUser("Bob");
+    
+    alice.getContactList().add(createContact(bob));
+    bob.getContactList().add(createContact(alice));
+  }
+  
+  private static Contact createContact(User user) throws UnknownHostException {
+    return new Contact(
+            user.getName(),
+            user.getKeyPair().getPublic(),
+            InetAddress.getLocalHost(),
+            user.getPort());
   }
   
   @Test
   public void testConstantSizeOfRequestAndResponse() throws Exception {
-    ClientSecureConnectionHandler clientHandler = new ClientSecureConnectionHandler(
-            alice.getKeyPair(),
-            bob.getKeyPair().getPublic());
-    
-    ServerSecureConnectionHandler serverHandler = new ServerSecureConnectionHandler(
-            bob.getKeyPair(),
-            Collections.singleton(alice.getKeyPair().getPublic()));
+    ClientSecureConnectionHandler clientHandler = new ClientSecureConnectionHandler(alice, alice.getContactList().get(0));
+    ServerSecureConnectionHandler serverHandler = new ServerSecureConnectionHandler(bob);
     
     byte[] connectionRequest = clientHandler.createConnectionRequest();
     byte[] connectionResponse = serverHandler.handleConnectionRequest(connectionRequest);
@@ -82,14 +90,9 @@ public class SecureConnectionHandlerTest {
 
   @Test
   public void testHandshake() throws Exception {
-    ClientSecureConnectionHandler clientHandler = new ClientSecureConnectionHandler(
-            alice.getKeyPair(),
-            bob.getKeyPair().getPublic());
-    
-    ServerSecureConnectionHandler serverHandler = new ServerSecureConnectionHandler(
-            bob.getKeyPair(),
-            Collections.singleton(alice.getKeyPair().getPublic()));
-    
+    ClientSecureConnectionHandler clientHandler = new ClientSecureConnectionHandler(alice, alice.getContactList().get(0));
+    ServerSecureConnectionHandler serverHandler = new ServerSecureConnectionHandler(bob);
+
     // Establishes a connection.
     byte[] connectionRequest = clientHandler.createConnectionRequest();
     byte[] connectionResponse = serverHandler.handleConnectionRequest(connectionRequest);
@@ -111,5 +114,5 @@ public class SecureConnectionHandlerTest {
             clientHandler.getDecryptionCipher(),
             testMessage);
   }
-  
+
 }
