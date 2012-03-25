@@ -47,20 +47,24 @@ public class NettyHandshakeTest {
     server.start(alice, new ChannelPipelineFactory() {
       @Override
       public ChannelPipeline getPipeline() throws Exception {
+        System.out.println("server side: getPipeline()");
         return Channels.pipeline(new HelloWorldMessageHandler(true));
       }
     });
     
-    Client client = new Client();
-    client.connect(bob, bob.getContactList().get(0), new ChannelPipelineFactory() {
-      @Override
-      public ChannelPipeline getPipeline() throws Exception {
-        return Channels.pipeline(new HelloWorldMessageHandler(false));
-      }
-    });
-    
-    // Wait until the client channel is closed.
-    client.close();
+    for (int i = 0; i < 10; i++) {
+      Client client = new Client();
+      client.connect(bob, bob.getContactList().get(0), new ChannelPipelineFactory() {
+        @Override
+        public ChannelPipeline getPipeline() throws Exception {
+          System.out.println("client side: getPipeline()");
+          return Channels.pipeline(new HelloWorldMessageHandler(false));
+        }
+      });
+
+      // Wait until the client channel is closed.
+      client.close();
+    }
     
     // Wait until the server channel is closed.
     server.close();
