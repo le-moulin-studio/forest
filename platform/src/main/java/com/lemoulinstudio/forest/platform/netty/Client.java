@@ -1,5 +1,6 @@
 package com.lemoulinstudio.forest.platform.netty;
 
+import com.lemoulinstudio.forest.platform.handshake.ServerSecureConnectionHandler;
 import com.lemoulinstudio.forest.platform.user.Contact;
 import com.lemoulinstudio.forest.platform.user.User;
 import java.net.InetSocketAddress;
@@ -12,17 +13,20 @@ import org.jboss.netty.channel.ChannelPipeline;
 import org.jboss.netty.channel.ChannelPipelineFactory;
 import org.jboss.netty.channel.Channels;
 import org.jboss.netty.channel.socket.nio.NioClientSocketChannelFactory;
+import org.jboss.netty.handler.codec.frame.FixedLengthFrameDecoder;
 
 public class Client {
   
   private ChannelFactory channelFactory;
   private Channel channel;
   
-  public void connect(User user, Contact contact) throws Exception {
+  public void connect(final User user, final Contact contact) throws Exception {
     connect(user, contact, new ChannelPipelineFactory() {
       @Override
       public ChannelPipeline getPipeline() {
-        return Channels.pipeline(new ForestChannelHandler());
+        return Channels.pipeline(
+                new FixedLengthFrameDecoder(ServerSecureConnectionHandler.connectionResponseSizeInBytes),
+                new ClientHandshakeFilter(user, contact));
       }
     });
   }

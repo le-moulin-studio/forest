@@ -27,6 +27,8 @@ import org.bouncycastle.util.BigIntegers;
 
 public class ServerSecureConnectionHandler extends SecureConnectionHandler {
   
+  public static final int connectionResponseSizeInBytes = 560;
+  
   private User user;
   private Contact contact;
   
@@ -113,7 +115,7 @@ public class ServerSecureConnectionHandler extends SecureConnectionHandler {
     }
     
     // From here the request is considered valid. We prepare the response.
-    ByteArrayOutputStream responseOutputStream = new ByteArrayOutputStream(1024);
+    ByteArrayOutputStream responseOutputStream = new ByteArrayOutputStream(connectionResponseSizeInBytes);
     
     // Generates my DH key pair.
     KeyPairGenerator keyPairGenerator = KeyPairGenerator.getInstance("DH", jceProviderName);

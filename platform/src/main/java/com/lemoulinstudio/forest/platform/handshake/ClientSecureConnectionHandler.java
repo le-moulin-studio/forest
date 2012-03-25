@@ -25,6 +25,8 @@ import org.bouncycastle.util.BigIntegers;
 
 public class ClientSecureConnectionHandler extends SecureConnectionHandler {
   
+  public static final int connectionRequestSizeInBytes = 1050;
+  
   private byte[] mySignatureHash;
 
   public ClientSecureConnectionHandler(User user, Contact contact) {
@@ -40,7 +42,7 @@ public class ClientSecureConnectionHandler extends SecureConnectionHandler {
   // and rectify Forest if needed.
   public byte[] createConnectionRequest() throws Exception {
     // This is the holder of the request.
-    ByteArrayOutputStream requestOutputStream = new ByteArrayOutputStream(1200);
+    ByteArrayOutputStream requestOutputStream = new ByteArrayOutputStream(connectionRequestSizeInBytes);
     
     // Generates my DH key pair.
     KeyPairGenerator keyPairGenerator = KeyPairGenerator.getInstance("DH", jceProviderName);

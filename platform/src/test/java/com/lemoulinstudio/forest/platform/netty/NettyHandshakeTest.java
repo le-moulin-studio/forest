@@ -42,7 +42,7 @@ public class NettyHandshakeTest {
   }
   
   @Test
-  public void testNettyAndSmall() throws Exception {
+  public void testNetty() throws Exception {
     Server server = new Server();
     server.start(alice, new ChannelPipelineFactory() {
       @Override
@@ -65,6 +65,21 @@ public class NettyHandshakeTest {
       // Wait until the client channel is closed.
       client.close();
     }
+    
+    // Wait until the server channel is closed.
+    server.close();
+  }
+    
+  @Test
+  public void testNettyAndSmall() throws Exception {
+    Server server = new Server();
+    server.start(alice);
+    
+    Client client = new Client();
+    client.connect(bob, bob.getContactList().get(0));
+
+    // Wait until the client channel is closed.
+    client.close();
     
     // Wait until the server channel is closed.
     server.close();

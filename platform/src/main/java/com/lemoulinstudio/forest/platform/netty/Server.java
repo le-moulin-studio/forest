@@ -1,5 +1,6 @@
 package com.lemoulinstudio.forest.platform.netty;
 
+import com.lemoulinstudio.forest.platform.handshake.ClientSecureConnectionHandler;
 import com.lemoulinstudio.forest.platform.user.User;
 import java.io.IOException;
 import java.net.InetSocketAddress;
@@ -14,6 +15,7 @@ import org.jboss.netty.channel.group.ChannelGroup;
 import org.jboss.netty.channel.group.ChannelGroupFuture;
 import org.jboss.netty.channel.group.DefaultChannelGroup;
 import org.jboss.netty.channel.socket.nio.NioServerSocketChannelFactory;
+import org.jboss.netty.handler.codec.frame.FixedLengthFrameDecoder;
 
 public class Server {
   
@@ -21,11 +23,13 @@ public class Server {
   
   private final ChannelGroup channelGroup = new DefaultChannelGroup("forest server");
   
-  public void start(User user) throws IOException {
+  public void start(final User user) throws IOException {
     start(user, new ChannelPipelineFactory() {
       @Override
       public ChannelPipeline getPipeline() {
-        return Channels.pipeline(new ForestChannelHandler());
+        return Channels.pipeline(
+                new FixedLengthFrameDecoder(ClientSecureConnectionHandler.connectionRequestSizeInBytes),
+                new ServerHandshakeFilter(user));
       }
     });
   }
