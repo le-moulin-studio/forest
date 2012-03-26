@@ -124,7 +124,7 @@ public final class ForestIoHandler extends IoHandlerAdapter {
 
   @Override
   public void exceptionCaught(IoSession session, Throwable cause) throws Exception {
-    System.err.println(cause.toString());
+    cause.printStackTrace();
     session.close(false);
   }
   

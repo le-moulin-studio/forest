@@ -104,7 +104,7 @@ public class ForestChannelHandler extends SimpleChannelUpstreamHandler {
 
   @Override
   public void exceptionCaught(ChannelHandlerContext ctx, ExceptionEvent e) throws Exception {
-    System.err.println(e.getCause().toString());
+    e.getCause().printStackTrace();
     ctx.getChannel().close();
   }
 

@@ -5,11 +5,16 @@ import com.lemoulinstudio.forest.platform.user.Contact;
 import com.lemoulinstudio.forest.platform.user.User;
 import org.jboss.netty.buffer.ChannelBuffer;
 import org.jboss.netty.buffer.ChannelBuffers;
+import org.jboss.netty.channel.ChannelHandler;
 import org.jboss.netty.channel.ChannelHandlerContext;
+import org.jboss.netty.channel.ChannelPipeline;
 import org.jboss.netty.channel.ChannelStateEvent;
+import org.jboss.netty.channel.Channels;
 import org.jboss.netty.channel.ExceptionEvent;
 import org.jboss.netty.channel.MessageEvent;
 import org.jboss.netty.channel.SimpleChannelUpstreamHandler;
+import org.jboss.netty.handler.codec.frame.LengthFieldBasedFrameDecoder;
+import org.jboss.netty.handler.codec.frame.LengthFieldPrepender;
 
 public class ClientHandshakeFilter extends SimpleChannelUpstreamHandler {
   
@@ -37,29 +42,21 @@ public class ClientHandshakeFilter extends SimpleChannelUpstreamHandler {
     connectionResponse.readBytes(responseData);
     handshakeHandler.handleConnectionResponse(responseData);
     
-//    // We attach the encryption and decryption ciphers to the session.
-//    session.setAttribute(CipherFilter.ENCRYPTION_CIPHER, handshakeHandler.getEncryptionCipher());
-//    session.setAttribute(CipherFilter.DECRYPTION_CIPHER, handshakeHandler.getDecryptionCipher());
+    // Clears the pipeline.
+    ChannelPipeline pipeline = ctx.getPipeline();
+    for (ChannelHandler handler : pipeline.toMap().values())
+      pipeline.remove(handler);
     
-//    // We attach some information about the connection.
-//    session.setAttribute(ForestIoHandler.INITIATED_BY_ME, Boolean.TRUE);
-//    session.setAttribute(ForestIoHandler.USER, user);
-//    session.setAttribute(ForestIoHandler.CONTACT, contact);
+    // Rebuild the pipeline.
+    pipeline.addLast("cipher", new CipherFilter(handshakeHandler.getEncryptionCipher(),
+                                                 handshakeHandler.getDecryptionCipher()));
+    pipeline.addLast("frameDecoder", new LengthFieldBasedFrameDecoder(100 * 1024, 0, 4, 0, 4));
+    pipeline.addLast("frameEncoder", new LengthFieldPrepender(4));
+    pipeline.addLast("small", new ForestChannelHandler(true, user, contact));
     
-//    // We create the cipher filter and add it to the filter chain.
-//    session.getFilterChain().getEntry(this).addAfter("cipher", CipherFilter.getInstance());
-//    
-//    // We create the codec filter and add it to the filter chain.
-//    session.getFilterChain().getEntry("cipher").addAfter("codec", PacketFilter.getInstance());
-//    
-//    // We remove this filter from the filter chain.
-//    session.getFilterChain().remove(this);
-//    
-//    // We notify the next filter about a created session.
-//    nextFilter.sessionCreated(session);
-//    nextFilter.sessionOpened(session);
-    
-    ctx.getChannel().close();
+    // We notify the handlers in the new pipeline about the state of the channel.
+    Channels.fireChannelOpen(ctx.getChannel());
+    Channels.fireChannelConnected(ctx.getChannel(), e.getRemoteAddress());
   }
 
   @Override

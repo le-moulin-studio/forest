@@ -13,7 +13,7 @@ import org.junit.Test;
 
 public class MinaHandshakeTest {
   
-  public static final int userKeysize = 4096;
+  public static final int userKeySizeInBits = 4096;
   
   public static User alice;
   public static User bob;
@@ -23,7 +23,7 @@ public class MinaHandshakeTest {
     // Registers Bouncy Castle as a provider for JCE.
     Security.addProvider(new BouncyCastleProvider());
     
-    UserFactory userFactory = new UserFactory(userKeysize);
+    UserFactory userFactory = new UserFactory(userKeySizeInBits);
     alice = userFactory.createUser("Alice");
     bob = userFactory.createUser("Bob");
     

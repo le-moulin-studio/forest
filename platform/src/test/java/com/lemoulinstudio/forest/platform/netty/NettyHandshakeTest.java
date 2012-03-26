@@ -15,7 +15,7 @@ import org.junit.Test;
 
 public class NettyHandshakeTest {
   
-  public static final int userKeysize = 4096;
+  public static final int userKeySizeInBits = 4096;
   
   public static User alice;
   public static User bob;
@@ -25,7 +25,7 @@ public class NettyHandshakeTest {
     // Registers Bouncy Castle as a provider for JCE.
     Security.addProvider(new BouncyCastleProvider());
     
-    UserFactory userFactory = new UserFactory(userKeysize);
+    UserFactory userFactory = new UserFactory(userKeySizeInBits);
     alice = userFactory.createUser("Alice");
     bob = userFactory.createUser("Bob");
     
@@ -69,7 +69,7 @@ public class NettyHandshakeTest {
     // Wait until the server channel is closed.
     server.close();
   }
-    
+  
   @Test
   public void testNettyAndSmall() throws Exception {
     Server server = new Server();
