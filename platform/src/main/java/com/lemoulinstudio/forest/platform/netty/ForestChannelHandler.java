@@ -96,7 +96,7 @@ public class ForestChannelHandler extends SimpleChannelUpstreamHandler {
       // In case 2 channels were created at the same time, this makes sure that
       // we update the contact only for the officially chosen channel.
       if (contact.getChannel() == ctx.getChannel()) {
-        contact.setIoSession(null);
+        contact.setChannel(null);
         contact.setNodeServiceProxy(null);
       }
     }

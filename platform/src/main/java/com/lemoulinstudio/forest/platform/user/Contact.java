@@ -3,7 +3,6 @@ package com.lemoulinstudio.forest.platform.user;
 import com.lemoulinstudio.forest.platform.service.NodeService;
 import java.net.InetAddress;
 import java.security.PublicKey;
-import org.apache.mina.core.session.IoSession;
 import org.jboss.netty.channel.Channel;
 
 public class Contact {
@@ -16,7 +15,6 @@ public class Contact {
   private InetAddress internetAddress;
   private int port;
   
-  private IoSession ioSession; // TODO: delete this field after the switch with Netty.
   private Channel channel;
   
   // This reference could be accessed via the ioSession, so it is redundant.
@@ -60,14 +58,6 @@ public class Contact {
 
   public void setPort(int port) {
     this.port = port;
-  }
-
-  public IoSession getIoSession() {
-    return ioSession;
-  }
-
-  public void setIoSession(IoSession ioSession) {
-    this.ioSession = ioSession;
   }
 
   public Channel getChannel() {
